@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::thread;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic};
 
 struct Counter {
     counts : i32
@@ -13,6 +13,9 @@ impl Counter {
 }
 
 
+// --------------------------------------------------------
+
+
 #[test]
 fn multithreaded_counter_1() {
     let mut counter = Counter {counts: 0};
@@ -22,6 +25,11 @@ fn multithreaded_counter_1() {
     }
     println!("Counts: {}", counter.counts);
 }
+
+
+
+// --------------------------------------------------------
+
 
 
 // #[test]
@@ -36,6 +44,9 @@ fn multithreaded_counter_1() {
 //     println!("{}", counter.counts);
 // }
 
+
+
+// --------------------------------------------------------
 
 
 
@@ -55,6 +66,9 @@ fn multithreaded_counter_1() {
 
 
 
+// --------------------------------------------------------
+
+
 
 
 // #[test]
@@ -72,6 +86,8 @@ fn multithreaded_counter_1() {
 // }
 
 
+
+// --------------------------------------------------------
 
 
 
@@ -95,6 +111,10 @@ fn multithreaded_counter_1() {
 
 
 
+// --------------------------------------------------------
+
+
+
 
 #[test]
 fn multithreaded_counter_6() {
@@ -104,7 +124,8 @@ fn multithreaded_counter_6() {
     let shared_counter = shareable_counter.clone();
 
     let handle = thread::spawn(move || {
-        shared_counter.lock().unwrap().add_one();
+        let mut mutex_guard = shared_counter.lock().unwrap();
+        mutex_guard.add_one();      // We can access to Counter only if we lock the mutex
     });
 
     handle.join().unwrap();
@@ -117,6 +138,7 @@ fn multithreaded_counter_6() {
 
 
 
+// --------------------------------------------------------
 
 
 
@@ -140,9 +162,43 @@ fn multithreaded_counter_7() {
         handles.push(handle);
     }
 
-    for i in 0..n_threads {
-        handles.pop().unwrap().join().unwrap();
+    for handle in handles {
+        handle.join().unwrap();
     }
 
     println!("{}", shareable_counter.lock().unwrap().counts);
+}
+
+
+
+// --------------------------------------------------------
+
+
+
+// With atomics
+
+#[test]
+fn multithreaded_counter_8() {
+    let n_threads = 10;
+    let counter = Arc::new(atomic::AtomicI32::new(0));
+
+    let mut handles = vec![];
+    
+    for t_id in 0..n_threads {
+        let shared_counter = counter.clone();
+        let handle = thread::spawn(move || 
+            for i in 0..1000 {
+                shared_counter.fetch_add(1, atomic::Ordering::SeqCst);
+            }
+
+        );
+
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("{:?}", counter);
 }

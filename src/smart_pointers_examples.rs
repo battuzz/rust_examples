@@ -13,7 +13,7 @@ fn smart_pointers_1() {
 }
 
 
-
+// --------------------------------------------------------
 
 
 
@@ -30,6 +30,8 @@ fn smart_pointers_2() {
 
 
 
+// --------------------------------------------------------
+
 
 
 
@@ -40,10 +42,17 @@ fn smart_pointers_3() {
 
     // Returns &MyStruct. Panics if value is currently mutably borrowed
     let x_ref = x.borrow();
+    drop(x_ref);
 
     // Return &mut MyStruct. Panics if value is currently immutably borrowed
-    // let x_ref_mut = x.borrow_mut();
+    let x_ref_mut = x.borrow_mut();
+    drop(x_ref_mut);
 }
+
+
+
+
+// --------------------------------------------------------
 
 
 
